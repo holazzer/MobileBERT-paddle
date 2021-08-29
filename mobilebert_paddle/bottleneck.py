@@ -1,6 +1,10 @@
+import paddle
+from paddle import nn
+
+from bottleneck_layer import BottleneckLayer
 
 
-class Bottleneck(nn.Module):
+class Bottleneck(nn.Layer):
     def __init__(self, config):
         super().__init__()
         self.key_query_shared_bottleneck = config.key_query_shared_bottleneck

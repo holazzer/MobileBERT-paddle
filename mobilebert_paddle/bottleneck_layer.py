@@ -1,7 +1,10 @@
+import paddle
+from paddle import nn
+
+from util import NORM2FN
 
 
-
-class BottleneckLayer(nn.Module):
+class BottleneckLayer(nn.Layer):
     def __init__(self, config):
         super().__init__()
         self.dense = nn.Linear(config.hidden_size, config.intra_bottleneck_size)

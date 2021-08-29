@@ -1,7 +1,10 @@
+from paddle import nn
+
+from mobile_bert_intermediate import MobileBertIntermediate
+from ffn_out import FFNOutput
 
 
-
-class FFNLayer(nn.Module):
+class FFNLayer(nn.Layer):
     def __init__(self, config):
         super().__init__()
         self.intermediate = MobileBertIntermediate(config)

@@ -1,6 +1,14 @@
+import paddle
+from paddle import nn
+
+from mobile_bert_att import MobileBertAttention
+from mobile_bert_intermediate import MobileBertIntermediate
+from mobile_bert_out import MobileBertOutput
+from bottleneck import Bottleneck
+from ffn_layer import FFNLayer
 
 
-class MobileBertLayer(nn.Module):
+class MobileBertLayer(nn.Layer):
     def __init__(self, config):
         super().__init__()
         self.use_bottleneck = config.use_bottleneck
@@ -12,7 +20,7 @@ class MobileBertLayer(nn.Module):
         if self.use_bottleneck:
             self.bottleneck = Bottleneck(config)
         if config.num_feedforward_networks > 1:
-            self.ffn = nn.ModuleList([FFNLayer(config) for _ in range(config.num_feedforward_networks - 1)])
+            self.ffn = nn.LayerList([FFNLayer(config) for _ in range(config.num_feedforward_networks - 1)])
 
     def forward(
         self,

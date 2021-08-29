@@ -4,9 +4,25 @@ from typing import Optional, Tuple, Any
 
 import paddle
 from paddle import nn
+import paddle.nn.functional as F
 from .nonorm import NoNorm
 
 NORM2FN = {"layer_norm": nn.LayerNorm, "no_norm": NoNorm}
+
+ACT2FN = {
+    "relu": F.relu,
+    "silu": F.silu,
+    "swish": F.silu,
+    "gelu": F.gelu,
+    "tanh": paddle.tanh,
+    "gelu_new": gelu_new,      # ?
+    "gelu_fast": gelu_fast,    # ? todo: find these activations ...
+    "quick_gelu": quick_gelu,  # ?
+    "mish": mish,              # ?
+    "linear": linear_act,      # ?
+    "sigmoid": F.sigmoid,
+}
+
 
 is_tensor = paddle.is_tensor
 
