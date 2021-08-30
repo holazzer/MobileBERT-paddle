@@ -58,7 +58,7 @@ class MobileBertLayer(nn.Layer):
             (layer_output,)
             + outputs
             + (
-                torch.tensor(1000),
+                paddle.to_tensor(1000),
                 query_tensor,
                 key_tensor,
                 value_tensor,

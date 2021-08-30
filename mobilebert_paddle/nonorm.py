@@ -1,10 +1,15 @@
 import paddle
 from paddle import nn
 
+from typing import Tuple, Union
+
 
 class NoNorm(nn.Layer):
-    def __init__(self, feat_size, eps=None):
+    def __init__(self, feat_size: Union[int, Tuple], eps=None):
         super().__init__()
+
+        if isinstance(feat_size, int): feat_size = (feat_size, )
+
         bias = paddle.zeros(feat_size)
         weight = paddle.ones(feat_size)
 

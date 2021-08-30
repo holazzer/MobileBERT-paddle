@@ -4,6 +4,8 @@ from paddle import nn
 from mobile_bert_self_att import MobileBertSelfAttention
 from mobile_bert_self_out import MobileBertSelfOutput
 
+from typing import List, Tuple, Set
+
 
 class MobileBertAttention(nn.Layer):
     def __init__(self, config):
@@ -76,12 +78,13 @@ def prune_linear_layer(layer: nn.Linear, index, dim: int = 0) -> nn.Linear:
             b = layer.bias.clone().detach()
         else:
             b = layer.bias[index].clone().detach()
-    new_size = list(layer.weight.size())
+    new_size = list(layer.weight.shape)
     new_size[dim] = len(index)
-    new_layer = nn.Linear(new_size[1], new_size[0], bias=layer.bias is not None).to(layer.weight.device)
+    new_layer = nn.Linear(new_size[1], new_size[0], bias_attr=layer.bias is not None)
     new_layer.weight.requires_grad = False
     new_layer.weight.copy_(W.contiguous())
     new_layer.weight.requires_grad = True
+    layer.weight
     if layer.bias is not None:
         new_layer.bias.requires_grad = False
         new_layer.bias.copy_(b.contiguous())
@@ -91,7 +94,7 @@ def prune_linear_layer(layer: nn.Linear, index, dim: int = 0) -> nn.Linear:
 
 def find_pruneable_heads_and_indices(
     heads: List[int], n_heads: int, head_size: int, already_pruned_heads: Set[int]
-) -> Tuple[Set[int], torch.LongTensor]:
+) -> Tuple[Set[int], paddle.Tensor]:
     """
     Finds the heads and their indices taking :obj:`already_pruned_heads` into account.
 
@@ -104,13 +107,12 @@ def find_pruneable_heads_and_indices(
     Returns:
         :obj:`Tuple[Set[int], torch.LongTensor]`: A tuple with the remaining heads and their corresponding indices.
     """
-    mask = torch.ones(n_heads, head_size)
+    mask = paddle.ones((n_heads, head_size))
     heads = set(heads) - already_pruned_heads  # Convert to set and remove already pruned heads
     for head in heads:
         # Compute how many pruned heads are before the head and move the index accordingly
         head = head - sum(1 if h < head else 0 for h in already_pruned_heads)
         mask[head] = 0
-    mask = mask.view(-1).contiguous().eq(1)
-    index: torch.LongTensor = torch.arange(len(mask))[mask].long()
+    mask = mask.reshape(-1) == 1
+    index = paddle.masked_select(mask, paddle.arange(len(mask)))
     return heads, index
-

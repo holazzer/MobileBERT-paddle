@@ -1,4 +1,6 @@
-from util import *
+import paddle
+from paddle import nn
+from util import NORM2FN
 
 
 class OutputBottleneck(nn.Layer):

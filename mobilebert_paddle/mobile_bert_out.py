@@ -1,4 +1,11 @@
-class MobileBertOutput(nn.Module):
+import paddle
+from paddle import nn
+
+from out_bottleneck import OutputBottleneck
+from util import NORM2FN
+
+
+class MobileBertOutput(nn.Layer):
     def __init__(self, config):
         super().__init__()
         self.use_bottleneck = config.use_bottleneck

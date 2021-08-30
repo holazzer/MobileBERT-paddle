@@ -1,11 +1,11 @@
 import paddle
 from paddle import nn
 
-from .mobile_bert_pretrained_model import MobileBertPreTrainedModel
-from .mobile_bert_embedding import MobileBertEmbeddings
-from .mobile_bert_encoder import MobileBertEncoder
-from .mobile_bert_pooler import MobileBertPooler
-from .util import BaseModelOutputWithPooling
+from mobile_bert_pretrained_model import MobileBertPreTrainedModel
+from mobile_bert_embedding import MobileBertEmbeddings
+from mobile_bert_encoder import MobileBertEncoder
+from mobile_bert_pooler import MobileBertPooler
+from util import BaseModelOutputWithPooling
 
 
 class MobileBertModel(MobileBertPreTrainedModel):

@@ -30,7 +30,13 @@ class MobileBertConfig:
         classifier_activation=True,
         **kwargs
     ):
-        super().__init__(pad_token_id=pad_token_id, **kwargs)
+        # super().__init__(pad_token_id=pad_token_id, **kwargs)
+        self.bos_token_id = kwargs.pop("bos_token_id", None)
+        self.pad_token_id = pad_token_id
+        self.eos_token_id = kwargs.pop("eos_token_id", None)
+        self.sep_token_id = kwargs.pop("sep_token_id", None)
+        self.pruned_heads = kwargs.pop("pruned_heads", {})
+        self.is_encoder_decoder = kwargs.pop("is_encoder_decoder", False)
 
         self.vocab_size = vocab_size
         self.hidden_size = hidden_size

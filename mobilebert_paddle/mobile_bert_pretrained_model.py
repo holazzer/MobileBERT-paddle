@@ -21,18 +21,24 @@ class MobileBertPreTrainedModel(PreTrainedModel):
     def _init_weights(self, module):
         """Initialize the weights"""
         if isinstance(module, nn.Linear):
-            # Slightly different from the TF version which uses truncated_normal for initialization
-            # cf https://github.com/pytorch/pytorch/pull/5617
-            module.weight.data.normal_(mean=0.0, std=self.config.initializer_range)
+            norm_data = paddle.normal(mean=0.0, std=self.config.initializer_range, shape=module.weight.shape)
+            module.weight.set_value(norm_data)
             if module.bias is not None:
-                module.bias.data.zero_()
+                zero_data = paddle.zeros_like(module.bias, dtype=module.bias.dtype)
+                module.bias.set_value(zero_data)
+
         elif isinstance(module, nn.Embedding):
-            module.weight.data.normal_(mean=0.0, std=self.config.initializer_range)
-            if module.padding_idx is not None:
-                module.weight.data[module.padding_idx].zero_()
+            norm_data = paddle.normal(mean=0.0, std=self.config.initializer_range,
+                                      shape=module.weight.shape)
+            module.weight.set_value(norm_data)
+            if not (module._padding_idx is None):
+                module.weight[module._padding_idx] = 0  # Hope this won't be a problem ...
+
         elif isinstance(module, (nn.LayerNorm, NoNorm)):
-            module.bias.data.zero_()
-            module.weight.data.fill_(1.0)
+            zero_data = paddle.zeros_like(module.bias, dtype=module.bias.dtype)
+            module.bias.set_value(zero_data)
+            one_data = paddle.ones_like(module.weight, dtype=module.weight.dtype)
+            module.weight.set_value(one_data)
 
     def get_extended_attention_mask(self, attention_mask: paddle.Tensor, input_shape: Tuple[int, ...]) -> paddle.Tensor:
         """
