@@ -7,6 +7,8 @@ from mobile_bert_encoder import MobileBertEncoder
 from mobile_bert_pooler import MobileBertPooler
 from util import BaseModelOutputWithPooling
 
+from typing import Optional
+
 
 class MobileBertModel(MobileBertPreTrainedModel):
     def __init__(self, config, add_pooling_layer=True):
@@ -16,6 +18,7 @@ class MobileBertModel(MobileBertPreTrainedModel):
         self.encoder = MobileBertEncoder(config)
         self.pooler = MobileBertPooler(config) if add_pooling_layer else None
         self.init_weights()
+        self.dtype = config.dtype
 
     def get_input_embeddings(self):
         return self.embeddings.word_embeddings
@@ -38,7 +41,7 @@ class MobileBertModel(MobileBertPreTrainedModel):
         output_attentions = output_attentions \
             if output_attentions is not None else self.config.output_attentions
 
-        output_hidden_states =  output_hidden_states \
+        output_hidden_states = output_hidden_states \
             if output_hidden_states is not None else self.config.output_hidden_states
 
         return_dict = return_dict \
@@ -94,4 +97,6 @@ class MobileBertModel(MobileBertPreTrainedModel):
             hidden_states=encoder_outputs.hidden_states,
             attentions=encoder_outputs.attentions,
         )
+
+
 

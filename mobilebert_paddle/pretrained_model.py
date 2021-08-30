@@ -322,7 +322,6 @@ class PreTrainedModel(nn.Layer):
 
         self.base_model._prune_heads(heads_to_prune)
 
-
     def retrieve_modules_from_names(self, names, add_prefix=False, remove_prefix=False):
         module_keys = set([".".join(key.split(".")[:-1]) for key in names])
 
@@ -343,3 +342,39 @@ class PreTrainedModel(nn.Layer):
 
         return retrieved_modules
 
+    def get_head_mask(
+        self, head_mask: Optional[paddle.Tensor], num_hidden_layers: int, is_attention_chunked: bool = False
+    ) -> paddle.Tensor:
+        """
+        Prepare the head mask if needed.
+
+        Args:
+            head_mask (:obj:`torch.Tensor` with shape :obj:`[num_heads]` or :obj:`[num_hidden_layers x num_heads]`, `optional`):
+                The mask indicating if we should keep the heads or not (1.0 for keep, 0.0 for discard).
+            num_hidden_layers (:obj:`int`):
+                The number of hidden layers in the model.
+            is_attention_chunked: (:obj:`bool`, `optional`, defaults to :obj:`False`):
+                Whether or not the attentions scores are computed by chunks or not.
+
+        Returns:
+            :obj:`torch.Tensor` with shape :obj:`[num_hidden_layers x batch x num_heads x seq_length x seq_length]` or
+            list with :obj:`[None]` for each layer.
+        """
+        if not (head_mask is None):
+            head_mask = self._convert_head_mask_to_5d(head_mask, num_hidden_layers)
+            if is_attention_chunked is True:
+                head_mask = head_mask.unsqueeze(-1)
+        else:
+            head_mask = [None] * num_hidden_layers
+        return head_mask
+
+    def _convert_head_mask_to_5d(self, head_mask, num_hidden_layers):
+        """-> [num_hidden_layers x batch x num_heads x seq_length x seq_length]"""
+        if head_mask.dim() == 1:
+            head_mask = head_mask.unsqueeze(0).unsqueeze(0).unsqueeze(-1).unsqueeze(-1)
+            head_mask = head_mask.expand(num_hidden_layers, -1, -1, -1, -1)
+        elif head_mask.dim() == 2:
+            head_mask = head_mask.unsqueeze(1).unsqueeze(-1).unsqueeze(-1)  # We can specify head_mask for each layer
+        assert head_mask.dim() == 5, f"head_mask.dim != 5, instead {head_mask.dim()}"
+        head_mask = head_mask.to(dtype=self.dtype)  # switch to float if need + fp16 compatibility
+        return head_mask

@@ -20,9 +20,9 @@ class MobileBertSelfAttention(nn.Layer):
         self.dropout = nn.Dropout(config.attention_probs_dropout_prob)
 
     def transpose_for_scores(self, x):
-        new_x_shape = x.size()[:-1] + (self.num_attention_heads, self.attention_head_size)
-        x = x.view(*new_x_shape)
-        return x.permute(0, 2, 1, 3)
+        new_x_shape = tuple(x.shape[:-1]) + (self.num_attention_heads, self.attention_head_size)
+        x = x.reshape(new_x_shape)
+        return x.transpose((0, 2, 1, 3))
 
     def forward(
         self,
@@ -44,7 +44,9 @@ class MobileBertSelfAttention(nn.Layer):
         # Take the dot product between "query" and "key" to get the raw attention scores.
 
         # attention_scores = torch.matmul(query_layer, key_layer.transpose(-1, -2))
-        attention_scores = paddle.matmul(query_layer, key_layer.transpose(-1, -2))
+        perm = list(range(key_layer.dim()))
+        perm[-1], perm[-2] = perm[-2], perm[-1]
+        attention_scores = paddle.matmul(query_layer, key_layer.transpose(perm))
         # todo: check transpose behavior.
 
         attention_scores = attention_scores / math.sqrt(self.attention_head_size)
@@ -62,10 +64,9 @@ class MobileBertSelfAttention(nn.Layer):
         if head_mask is not None:
             attention_probs = attention_probs * head_mask
         context_layer = paddle.matmul(attention_probs, value_layer)
-        context_layer = context_layer.permute(0, 2, 1, 3).contiguous()
-        # todo: replace permute
+        context_layer = context_layer.transpose((0, 2, 1, 3)) # .contiguous()
 
-        new_context_layer_shape = context_layer.shape[:-2] + (self.all_head_size,)
+        new_context_layer_shape = tuple(context_layer.shape[:-2]) + (self.all_head_size,)
         context_layer = context_layer.reshape(new_context_layer_shape)
         outputs = (context_layer, attention_probs) if output_attentions else (context_layer,)
         return outputs

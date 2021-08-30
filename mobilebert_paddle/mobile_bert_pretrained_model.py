@@ -66,7 +66,7 @@ class MobileBertPreTrainedModel(PreTrainedModel):
             if self.config.is_decoder:
                 batch_size, seq_length = input_shape
                 seq_ids = paddle.arange(seq_length)
-                causal_mask = seq_ids[None, None, :].repeat(batch_size, seq_length, 1) <= seq_ids[None, :, None]
+                causal_mask = seq_ids.unsqueeze(0).unsqueeze(0).tile((batch_size, seq_length, 1)) <= seq_ids.unsqueeze(0).unsqueeze(-1)
                 # in case past_key_values are used we need to add a prefix ones mask to the causal mask
                 # causal and attention masks must have same type with pytorch version < 1.3
                 causal_mask = causal_mask.astype(attention_mask.dtype)
@@ -83,9 +83,9 @@ class MobileBertPreTrainedModel(PreTrainedModel):
                         axis=-1,
                     )
 
-                extended_attention_mask = causal_mask[:, None, :, :] * attention_mask[:, None, None, :]
+                extended_attention_mask = causal_mask.unsqueeze(1) * attention_mask.unsqueeze(1).unsqueeze(1)
             else:
-                extended_attention_mask = attention_mask[:, None, None, :]
+                extended_attention_mask = attention_mask.unsqueeze(1).unsqueeze(1)
         else:
             raise ValueError(
                 f"Wrong shape for input_ids (shape {input_shape}) or attention_mask (shape {attention_mask.shape})"
