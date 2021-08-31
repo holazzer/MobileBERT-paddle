@@ -1,7 +1,6 @@
 import paddle
 import numpy as np
 
-
 from collections import OrderedDict
 
 
@@ -15,6 +14,16 @@ for k, v in data.items():
 data = data_
 
 # 2. some weights should be transposed.
+wrong_shape = []
+
+from z_debug_script import MobileBertModel, MobileBertConfig
+target = MobileBertModel(MobileBertConfig()).state_dict()
+src = data
+
+for k in target:
+    if src[k].shape != target[k].shape:
+        wrong_shape.append(k)
+
 
 for k in wrong_shape:
     data[k] = data[k].t()
