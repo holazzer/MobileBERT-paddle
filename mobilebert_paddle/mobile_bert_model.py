@@ -11,7 +11,7 @@ from typing import Optional
 
 
 class MobileBertModel(MobileBertPreTrainedModel):
-    def __init__(self, config, add_pooling_layer=True):
+    def __init__(self, config, add_pooling_layer=True):  # pretrained weight no pool
         super().__init__(config)
         self.config = config
         self.embeddings = MobileBertEmbeddings(config)
