@@ -432,6 +432,8 @@ FFNOutput 实现了 Add & Norm。
 
 最后一层的 Linear 用的就是Intermediate。
 
+最后，从小肚子再恢复到512需要反向的bottleneck结构，基本上就是前面的bottleneck反过来，所以我偷下懒就不说了，可以自己看代码。
+
 大功告成，MobileBERT的网络结构基本就是这样了。具体细节参考代码中的 forward 操作。
 
 
