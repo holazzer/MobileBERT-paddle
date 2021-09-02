@@ -5,8 +5,8 @@ from ppnlp_tokenizer import MobileBertTokenizer
 
 
 config = MobileBertConfig()
-model = MobileBertModel(config)
-pretrained_weights = paddle.load('d:/fixed-mb.bin')
+model = MobileBertModel(config, add_pooling_layer=True)
+pretrained_weights = paddle.load('d:/nd.bin')
 model.load_dict(pretrained_weights)
 tokenizer = MobileBertTokenizer('./mobilebert-uncased/vocab.txt', do_lower_case=True)
 
@@ -22,6 +22,7 @@ sentence = "Advancing the state of the art: We work on computer science problems
 
 i = tk(sentence)
 
+model.eval()
 o = model(**i)
 
 

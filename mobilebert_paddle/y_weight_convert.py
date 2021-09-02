@@ -25,11 +25,38 @@ for k in target:
         wrong_shape.append(k)
 
 
+
+
 for k in wrong_shape:
     data[k] = data[k].t()
 
 # 3. save
 paddle.save(data, 'd:/fixed-mb.bin')
+
+
+# find what types of layers need having their weight transposed
+
+sd = target
+msd = src
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
