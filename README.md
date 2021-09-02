@@ -163,7 +163,6 @@ class MobileBertEncoder(nn.Layer):
         all_attentions = () if output_attentions else None
 
 
-
         for i, layer_module in enumerate(self.layer):  # 每次过一个layer
             if output_hidden_states:
                 all_hidden_states = all_hidden_states + (hidden_states,)
@@ -214,23 +213,286 @@ class MobileBertLayer(nn.Layer):
 
 这里要参考上面论文里的图。
 
+![](static/table_1_mobile_bert.png)
+
+这里有几处 MobileBERT 的设计需要说一下：
+
+（1）宽进宽出中间窄，为了方便和教师模型的输出对齐。
+
+![](static/fig_1.png)
+
+用大白话说，MobileBERT就是把中间变窄了。
+Figure 1(b)是teacher，它走两条路，在图中标为红色和蓝色，这两条路就是1(a)中普通BERT的路，关键就在于MobileBERT的设计是图中话出来的路尺寸是一样的，但是中间的肚子尺寸不一样，这样就可以节约模型的尺寸了。
+
+注意观察(b)和(c)的Linear开口方向不一样，teacher是从小到大，利于模型的训练；mobile是从大到小，压缩模型尺寸。
+
+（2）Stacked FFN
+
+MobileBERT 把肚子缩小了，这样导致 MHA 和 FFN 的参数比例发生了变化，这样信息的表示就不匹配了，所以作者把FFN多加了几层。这里是从1层变成了4层叠加。"carefully balanced".
+
+（3）NoNorm
+
+为了节约计算，MobileBERT 把所有的 Layer Normalization 换成了 NoNorm 操作，具体参见原文。NoNorm 操作计算的是 Hadamard 积，也就是两个矩阵按位置分别相乘。
+
+```python
+class NoNorm(nn.Layer):
+    def __init__(self, feat_size: Union[int, Tuple], eps=None):
+        super().__init__()
+
+        if isinstance(feat_size, int): feat_size = (feat_size, )
+
+        bias = paddle.zeros(feat_size)
+        weight = paddle.ones(feat_size)
+
+        self.bias = paddle.create_parameter(
+            shape=bias.shape, dtype=bias.dtype,
+            is_bias=True,
+            default_initializer=paddle.nn.initializer.Assign(bias)
+        )
+
+        self.weight = paddle.create_parameter(
+            shape=weight.shape, dtype=weight.dtype,
+            default_initializer=paddle.nn.initializer.Assign(weight)
+        )
+
+    def forward(self, input_tensor):
+        return input_tensor * self.weight + self.bias  # Hadamard product
+```
+
+这里的好处就比较玄妙了，反正我不是特别明白。。。显而易见的是计算比较方便，其他方面就不太清楚了。。。另外，模型用relu而不是gelu。
 
 
 
+好了，现在看一下 Layer 内的 forward 操作：
+```python
+    def forward(
+        self,
+        hidden_states,
+        attention_mask=None,
+        head_mask=None,
+        output_attentions=None,
+    ):
+        # 1. 过 bottleneck （FC）
+        if self.use_bottleneck:
+            query_tensor, key_tensor, value_tensor, layer_input = self.bottleneck(hidden_states)
+        else:
+            query_tensor, key_tensor, value_tensor, layer_input = [hidden_states] * 4
+
+        # 2. 过 MHA
+        self_attention_outputs = self.attention(
+            query_tensor,
+            key_tensor,
+            value_tensor,
+            layer_input,
+            attention_mask,
+            head_mask,
+            output_attentions=output_attentions,
+        )
+        attention_output = self_attention_outputs[0]
+        s = (attention_output,)
+        outputs = self_attention_outputs[1:]  # add self attentions if we output attention weights
+
+        # 3. 过 stacked FFN
+        if self.num_feedforward_networks != 1:
+            for i, ffn_module in enumerate(self.ffn):
+                attention_output = ffn_module(attention_output)
+                s += (attention_output,)
+
+        # 4. 恢复尺寸的 FC
+        intermediate_output = self.intermediate(attention_output)
+        layer_output = self.output(intermediate_output, attention_output, hidden_states)
+
+        outputs = (
+            (layer_output,)
+            + outputs
+            + (
+                paddle.to_tensor(1000),
+                query_tensor,
+                key_tensor,
+                value_tensor,
+                layer_input,
+                attention_output,
+                intermediate_output,
+            )
+            + s
+        )
+        return outputs
+```
+
+接下来就这4个部分来看每个模块。
+
+#### 🍼 Bottleneck
+
+```python
+class BottleneckLayer(nn.Layer):
+    def __init__(self, config):
+        super().__init__()
+        self.dense = nn.Linear(config.hidden_size, config.intra_bottleneck_size)
+        self.LayerNorm = NoNorm()
+
+    def forward(self, hidden_states):
+        layer_input = self.dense(hidden_states)
+        layer_input = self.LayerNorm(layer_input)
+        return layer_input
+
+class Bottleneck(nn.Layer):
+    def __init__(self, config):
+        super().__init__()
+        self.key_query_shared_bottleneck = True
+        self.use_bottleneck_attention = False
+        self.input = BottleneckLayer(config)
+        if self.key_query_shared_bottleneck:
+            self.attention = BottleneckLayer(config)
+
+    def forward(self, hidden_states):
+        bottlenecked_hidden_states = self.input(hidden_states)
+
+        shared_attention_input = self.attention(hidden_states)
+        return (shared_attention_input, shared_attention_input, hidden_states, bottlenecked_hidden_states)
+```
+
+其实Bottleneck就是FC，上面红蓝两条路，这里对应两个不同用途的 BottleneckLayer。
 
 
+#### 🍩 Attention
+
+```python
+class MobileBertAttention(nn.Layer):
+    def __init__(self, config):
+        super().__init__()
+        self.self = MobileBertSelfAttention(config)
+        self.output = MobileBertSelfOutput(config)
+
+class MobileBertSelfAttention(nn.Layer):
+    def __init__(self, config):
+        super().__init__()
+        self.num_attention_heads = config.num_attention_heads
+        self.attention_head_size = int(config.true_hidden_size / config.num_attention_heads)
+        self.all_head_size = self.num_attention_heads * self.attention_head_size
+
+        self.query = nn.Linear(config.true_hidden_size, self.all_head_size)
+        self.key = nn.Linear(config.true_hidden_size, self.all_head_size)
+        self.value = nn.Linear(
+            config.true_hidden_size if config.use_bottleneck_attention else config.hidden_size, self.all_head_size
+        )
+        self.dropout = nn.Dropout(config.attention_probs_dropout_prob)
+
+class MobileBertSelfOutput(nn.Layer):
+    def __init__(self, config):
+        super().__init__()
+        self.dense = nn.Linear(config.true_hidden_size, config.true_hidden_size)
+        self.LayerNorm = NoNorm()
+```
+
+MHA每个是4个head，在 SelfAttention 中实现了。最后一个 FC + NoNorm 输出 SelfOutput 。
 
 
-### 训练策略
+#### 🍰 FFN
+
+```python
+class MobileBertIntermediate(nn.Layer):
+    def __init__(self, config):
+        super().__init__()
+        self.dense = nn.Linear(config.true_hidden_size, config.intermediate_size)
+        self.intermediate_act_fn = F.relu
+
+    def forward(self, hidden_states):
+        hidden_states = self.dense(hidden_states)
+        hidden_states = self.intermediate_act_fn(hidden_states)
+        return hidden_states
+
+class FFNOutput(nn.Layer):
+    def __init__(self, config):
+        super().__init__()
+        self.dense = nn.Linear(config.intermediate_size, config.true_hidden_size)
+        self.LayerNorm = NoNorm()
+
+    def forward(self, hidden_states, residual_tensor):
+        layer_outputs = self.dense(hidden_states)
+        layer_outputs = self.LayerNorm(layer_outputs + residual_tensor) # Add & Norm
+        return layer_outputs
+
+class FFNLayer(nn.Layer):
+    def __init__(self, config):
+        super().__init__()
+        self.intermediate = MobileBertIntermediate(config)
+        self.output = FFNOutput(config)
+
+    def forward(self, hidden_states):
+        intermediate_output = self.intermediate(hidden_states)
+        layer_outputs = self.output(intermediate_output, hidden_states)
+        return layer_outputs
+```
+
+Intermediate 就是 FC + Relu。为什么叫 Intermediate 呢？这是transformers实现里面的名字，我认为它的意思是作为两个维度的中介，就是为了转换维度使用的 FC 。
+
+FFNOutput 实现了 Add & Norm。
+
+没啥说的了，图里有，FFN = [128 -> 512 -> 128] * 4
+
+最后一层的 Linear 用的就是Intermediate。
+
+大功告成，MobileBERT的网络结构基本就是这样了。具体细节参考代码中的 forward 操作。
 
 
+## 与 😀huggingface 上的预训练模型进行对齐
+
+```python
+# transformers pytorch 版本
+from transformers.models.mobilebert import MobileBertModel, MobileBertTokenizer
+
+mb = MobileBertModel.from_pretrained('google/mobilebert-uncased')
+
+tk = MobileBertTokenizer.from_pretrained('google/mobilebert-uncased')
+
+sentence = "Advancing the state of the art: We work on computer science problems that define the technology of today and tomorrow."
+
+i = tk(sentence, return_tensors='pt')
+
+mb.eval()
+o = mb(**i)
+```
 
 
+```python
+# paddle 版本
+import paddle
+from mobile_bert_model import *
+from config import MobileBertConfig
+from ppnlp_tokenizer import MobileBertTokenizer
+
+config = MobileBertConfig()
+model = MobileBertModel(config, add_pooling_layer=False)
+pretrained_weights = paddle.load('path/to/your/converted/weight')
+model.load_dict(pretrained_weights)
+tokenizer = MobileBertTokenizer('./mobilebert-uncased/vocab.txt', do_lower_case=True)
+# 使用 ppnlp 的 tokenizer 加载了预训练模型的 vocab 文件，可以兼容
+
+def tk(s):
+    d = tokenizer(s)
+    for k, v in d.items():
+        d[k] = paddle.to_tensor((v, ))
+    return d
+
+sentence = "Advancing the state of the art: We work on computer science problems that define the technology of today and tomorrow."
+
+i = tk(sentence)
+
+model.eval()
+o = model(**i)
+```
+
+p.s. "Advancing the state of the art: We work on computer science problems that define the technology of today and tomorrow." 是 google 在 huggingface 上写的 Research interests.
 
 
+输出：
 
+![](static/align_res.png)
 
+上方是transformers的输出结果，下方是paddle版的输出结果。
 
+由于float的精度问题，float是数值越大越不精确，因此这个输出的数值很大的时候，精度就会很差。。。
 
+如果只看有效数字位的话，精度还是不错的，但是由于这是float，越大在数轴上越稀疏，这数肯定就越不精确了。虽然我们看着数基本上都对，实际上用 allclose 比较时，精度只有`rtol=0.75`。。。
 
 
