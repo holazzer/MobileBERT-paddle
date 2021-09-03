@@ -1,7 +1,7 @@
 import paddle
 from paddle import nn
 
-from util import NORM2FN
+from .util import NORM2FN
 
 
 class FFNOutput(nn.Layer):

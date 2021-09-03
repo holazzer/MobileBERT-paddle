@@ -1,7 +1,7 @@
 from paddle import nn
 
-from mobile_bert_intermediate import MobileBertIntermediate
-from ffn_out import FFNOutput
+from .mobile_bert_intermediate import MobileBertIntermediate
+from .ffn_out import FFNOutput
 
 
 class FFNLayer(nn.Layer):

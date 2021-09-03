@@ -1,8 +1,8 @@
 import paddle
 from paddle import nn
 
-from out_bottleneck import OutputBottleneck
-from util import NORM2FN
+from .out_bottleneck import OutputBottleneck
+from .util import NORM2FN
 
 
 class MobileBertOutput(nn.Layer):

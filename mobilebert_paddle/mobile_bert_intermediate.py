@@ -1,7 +1,7 @@
 import paddle
 from paddle import nn
 
-from util import ACT2FN
+from .util import ACT2FN
 
 
 class MobileBertIntermediate(nn.Layer):

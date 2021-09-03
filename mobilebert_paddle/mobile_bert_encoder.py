@@ -1,8 +1,8 @@
 import paddle
 from paddle import nn
 
-from mobile_bert_layer import MobileBertLayer
-from util import BaseModelOutput
+from .mobile_bert_layer import MobileBertLayer
+from .util import BaseModelOutput
 
 
 class MobileBertEncoder(nn.Layer):

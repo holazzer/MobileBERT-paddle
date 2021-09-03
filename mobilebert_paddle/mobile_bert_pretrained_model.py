@@ -1,9 +1,9 @@
 import paddle
 from paddle import nn
 
-from nonorm import NoNorm
-from config import MobileBertConfig
-from pretrained_model import PreTrainedModel
+from .nonorm import NoNorm
+from .config import MobileBertConfig
+from .pretrained_model import PreTrainedModel
 
 from typing import Tuple
 

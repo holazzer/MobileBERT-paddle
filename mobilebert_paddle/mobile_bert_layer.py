@@ -1,11 +1,11 @@
 import paddle
 from paddle import nn
 
-from mobile_bert_att import MobileBertAttention
-from mobile_bert_intermediate import MobileBertIntermediate
-from mobile_bert_out import MobileBertOutput
-from bottleneck import Bottleneck
-from ffn_layer import FFNLayer
+from .mobile_bert_att import MobileBertAttention
+from .mobile_bert_intermediate import MobileBertIntermediate
+from .mobile_bert_out import MobileBertOutput
+from .bottleneck import Bottleneck
+from .ffn_layer import FFNLayer
 
 
 class MobileBertLayer(nn.Layer):

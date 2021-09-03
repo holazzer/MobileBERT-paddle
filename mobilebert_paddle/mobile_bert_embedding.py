@@ -1,7 +1,7 @@
 import paddle
 from paddle import nn
 
-from util import *
+from .util import *
 
 
 class MobileBertEmbeddings(nn.Layer):

@@ -1,7 +1,7 @@
 import paddle
 from paddle import nn
 
-from bottleneck_layer import BottleneckLayer
+from .bottleneck_layer import BottleneckLayer
 
 
 class Bottleneck(nn.Layer):

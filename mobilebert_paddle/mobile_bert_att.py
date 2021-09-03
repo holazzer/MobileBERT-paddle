@@ -1,8 +1,8 @@
 import paddle
 from paddle import nn
 
-from mobile_bert_self_att import MobileBertSelfAttention
-from mobile_bert_self_out import MobileBertSelfOutput
+from .mobile_bert_self_att import MobileBertSelfAttention
+from .mobile_bert_self_out import MobileBertSelfOutput
 
 from typing import List, Tuple, Set
 
@@ -84,7 +84,6 @@ def prune_linear_layer(layer: nn.Linear, index, dim: int = 0) -> nn.Linear:
     new_layer.weight.requires_grad = False
     new_layer.weight.copy_(W.contiguous())
     new_layer.weight.requires_grad = True
-    layer.weight
     if layer.bias is not None:
         new_layer.bias.requires_grad = False
         new_layer.bias.copy_(b.contiguous())
