@@ -5,7 +5,7 @@ from typing import Optional, Tuple, Any
 import paddle
 from paddle import nn
 import paddle.nn.functional as F
-from nonorm import NoNorm
+from .nonorm import NoNorm
 
 NORM2FN = {"layer_norm": nn.LayerNorm, "no_norm": NoNorm}
 
