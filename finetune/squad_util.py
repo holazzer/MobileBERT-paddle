@@ -43,6 +43,7 @@ class CrossEntropyLossForSQuAD(paddle.nn.Layer):
     def forward(self, y, labels: List[Tuple[int, int]]):
         start_logits, end_logits = y  # pred
         cnt = (len(labels) * 2)
+        labels = labels.transpose((1, 2, 0))
         loss = 0.
         for start_position, end_position in labels:
             start_loss = paddle.nn.functional.cross_entropy(
