@@ -10,21 +10,28 @@ from paddlenlp.transformers import BertTokenizer
 def prepare(example, tokenizer: BertTokenizer):
     context: str = example['context']
     question: str = example['question']
-    tkd: dict = tokenizer(context, question, stride=128, max_seq_len=128,
-                          pad_to_max_seq_len=True)
-    input_ids = paddle.to_tensor(tkd['input_ids'])
-    token_type_ids = paddle.to_tensor(tkd['token_type_ids'])
-
     answers: List[str] = example['answers']
     answers_starts: List[int] = example['answer_starts']
     answers_ends = [i + len(ans) for i, ans in zip(answers_starts, answers)]
     is_impossible: bool = example['is_impossible']
+
+    for i, start in enumerate(answers_starts):
+        if start > 384:
+            context_offset = len(context) - 384
+            context = context[-384:]
+            answers_starts[i] -= context_offset
+            answers_ends[i] -= context_offset
 
     if is_impossible:
         labels = [[0, 0]] * 4
     else:
         labels = [[st, ed] for st, ed in zip(answers_starts, answers_ends)]
         if len(labels) < 4: labels = (labels * 4)[:4]
+
+    tkd: dict = tokenizer(context, question, max_seq_len=512,
+                          pad_to_max_seq_len=True)
+    input_ids = paddle.to_tensor(tkd['input_ids'])
+    token_type_ids = paddle.to_tensor(tkd['token_type_ids'])
 
     return input_ids, token_type_ids, np.array(labels)
 
