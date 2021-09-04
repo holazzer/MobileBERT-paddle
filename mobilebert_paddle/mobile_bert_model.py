@@ -34,7 +34,7 @@ class MobileBertModel(MobileBertPreTrainedModel):
         for layer, heads in heads_to_prune.items():
             self.encoder.layer[layer].attention.prune_heads(heads)
 
-    def forward(self, input_ids=None, attention_mask=None, token_type_ids=None,
+    def forward(self, input_ids=None, token_type_ids=None, attention_mask=None,
                 position_ids=None, head_mask=None, inputs_embeds=None,
                 output_hidden_states=None, output_attentions=None, return_dict=None,):
 
