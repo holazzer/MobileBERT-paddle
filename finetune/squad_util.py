@@ -18,14 +18,17 @@ def prepare(example, tokenizer: BertTokenizer):
     answers_ends = [i + len(ans) for i, ans in zip(answers_starts, answers)]
     is_impossible: bool = example['is_impossible']
 
-    mod = False
-    for i, (start, end) in enumerate(zip(answers_starts, answers_ends)):
-        if start > 384 and end + len(question) > 510:
-            mod = True
-    if mod:
-        context = context[384:]
-        answers_starts = [i-384 for i in answers_starts]
-        answers_ends = [i-384 for i in answers_ends]
+    head = min(answers_starts)
+    tail = max(answers_ends)
+    tol = 510 - len(question)
+
+    if tail > tol:  # need offset
+        offset = tail - tol
+        new_head = (head - offset)//2
+        offset = offset + new_head
+        for i in range(len(answers)):
+            answers_starts[i] -= offset
+            answers_ends[i] -= offset
 
     if is_impossible:
         labels = [[0, 0]] * 4
