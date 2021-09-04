@@ -5,6 +5,9 @@ import random
 from typing import List, Tuple
 
 from paddlenlp.transformers import BertTokenizer
+from paddlenlp.datasets import load_dataset
+
+from paddle.io import Dataset
 
 
 def prepare(example, tokenizer: BertTokenizer):
@@ -33,15 +36,28 @@ def prepare(example, tokenizer: BertTokenizer):
     input_ids = paddle.to_tensor(tkd['input_ids'])
     token_type_ids = paddle.to_tensor(tkd['token_type_ids'])
 
-    return (input_ids, token_type_ids), np.array(labels)
+    return input_ids, token_type_ids, np.array(labels)
+
+
+class SquadFixDataset(Dataset):
+    def __init__(self, name, tokenizer):
+        super().__init__()
+        self.name = name
+        self.tokenizer = tokenizer
+        self.ds = load_dataset('squad', splits=name)
+
+    def __getitem__(self, idx):
+        return prepare(self.ds[idx], self.tokenizer)
+
+    def __len__(self):
+        return len(self.ds)
 
 
 class CrossEntropyLossForSQuAD(paddle.nn.Layer):
     def __init__(self):
         super().__init__()
 
-    def forward(self, y, labels: List[Tuple[int, int]]):
-        start_logits, end_logits = y  # pred
+    def forward(self,start_logits, end_logits, labels: List[Tuple[int, int]]):
         cnt = (len(labels) * 2)
         labels = labels.transpose((1, 2, 0))
         loss = 0.

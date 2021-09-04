@@ -9,6 +9,7 @@ from squad_util import prepare, CrossEntropyLossForSQuAD, set_seed
 
 from paddle.io import DataLoader
 import paddle
+from paddle.static import InputSpec
 
 # from sklearn.metrics import confusion_matrix
 
@@ -40,8 +41,11 @@ squad_v2_dev.map(partial(prepare, tokenizer=mbt), lazy=True)
 squad_v2_train_loader = DataLoader(squad_v2_train, batch_size=1, shuffle=True)
 squad_v2_dev_loader = DataLoader(squad_v2_dev, batch_size=1, shuffle=False)
 
+inp = [InputSpec([None, 512], paddle.int64, 'input_ids'),
+       InputSpec([None, 512], paddle.int64, 'token_type_ids')]
+lab = InputSpec([None, 4, 2], paddle.float32, 'pred')
 
-model = paddle.Model(qa)
+model = paddle.Model(qa, inputs=inp, labels=lab)
 model.prepare(optimizer=opt, loss=loss, metrics=acc)
 model.fit(squad_v2_train_loader, eval_data=squad_v2_dev_loader, epochs=1)
 
