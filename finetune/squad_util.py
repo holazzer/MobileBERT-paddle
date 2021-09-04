@@ -30,8 +30,11 @@ def prepare(example, tokenizer: BertTokenizer):
 
 
 class CrossEntropyLossForSQuAD(paddle.nn.Layer):
+    def __init__(self):
+        super().__init__()
+
     def forward(self, y, labels: List[Tuple[int, int]]):
-        start_logits, end_logits = y
+        start_logits, end_logits = y  # pred
         cnt = (len(labels) * 2)
         loss = 0.
         for start_position, end_position in labels:
