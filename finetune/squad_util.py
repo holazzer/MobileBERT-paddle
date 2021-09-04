@@ -18,12 +18,11 @@ def prepare(example, tokenizer: BertTokenizer):
     answers_ends = [i + len(ans) for i, ans in zip(answers_starts, answers)]
     is_impossible: bool = example['is_impossible']
 
-    for i, start in enumerate(answers_starts):
-        if start > 384:
-            context_offset = len(context) - 384
-            context = context[-384:]
-            answers_starts[i] -= context_offset
-            answers_ends[i] -= context_offset
+    for i, start, end in enumerate(zip(answers_starts, answers_ends)):
+        if start > 256 and end + len(question) > 510:
+            context = context[256:]
+            answers_starts[i] -= 256
+            answers_ends[i] -= 256
 
     if is_impossible:
         labels = [[0, 0]] * 4
