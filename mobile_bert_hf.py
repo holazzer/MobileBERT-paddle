@@ -2,3 +2,4 @@ from transformers.models.mobilebert import MobileBertModel, MobileBertPreTrained
 
 
 
+MobileBertPreTrainedModel.from_pretrained()
