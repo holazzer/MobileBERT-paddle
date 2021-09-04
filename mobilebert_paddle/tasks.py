@@ -9,7 +9,7 @@ class MobileBertForQuestionAnswering(nn.Layer):
         self.bert: MobileBertModel = mobile_bert
         self.classifier = nn.Linear(self.bert.config.hidden_size, 2)
 
-    def forward(self, input_ids, token_type_ids=None):
+    def forward(self, input_ids, token_type_ids):
         output = self.bert(
             input_ids,
             token_type_ids=token_type_ids,
