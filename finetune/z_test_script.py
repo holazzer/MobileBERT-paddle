@@ -5,15 +5,15 @@ from paddlenlp.datasets import load_dataset
 from functools import partial
 from typing import Dict, Union, List
 
-from .squad_util import prepare, CrossEntropyLossForSQuAD, set_seed
+from squad_util import prepare, CrossEntropyLossForSQuAD, set_seed
 
 from paddle.io import DataLoader
 import paddle
 
-from sklearn.metrics import confusion_matrix
+# from sklearn.metrics import confusion_matrix
 
-weight_path = r''
-vocab_path = r''
+weight_path = r'd:/nd.bin'
+vocab_path = r'C:\Users\what\Desktop\mobile_bert\mobilebert_paddle\mobilebert-uncased\vocab.txt'
 
 
 set_seed()
@@ -37,8 +37,8 @@ squad_v2_dev = load_dataset('squad', splits='dev_v2')
 squad_v2_train.map(partial(prepare, tokenizer=mbt), lazy=True)
 squad_v2_dev.map(partial(prepare, tokenizer=mbt), lazy=True)
 
-squad_v2_train_loader = DataLoader(squad_v2_train, batch_size=8, shuffle=True)
-squad_v2_dev_loader = DataLoader(squad_v2_dev, batch_size=8, shuffle=False)
+squad_v2_train_loader = DataLoader(squad_v2_train, batch_size=1, shuffle=True)
+squad_v2_dev_loader = DataLoader(squad_v2_dev, batch_size=1, shuffle=False)
 
 
 model = paddle.Model(qa)

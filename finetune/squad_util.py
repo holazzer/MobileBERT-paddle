@@ -33,7 +33,7 @@ def prepare(example, tokenizer: BertTokenizer):
     input_ids = paddle.to_tensor(tkd['input_ids'])
     token_type_ids = paddle.to_tensor(tkd['token_type_ids'])
 
-    return input_ids, token_type_ids, np.array(labels)
+    return (input_ids, token_type_ids), np.array(labels)
 
 
 class CrossEntropyLossForSQuAD(paddle.nn.Layer):
