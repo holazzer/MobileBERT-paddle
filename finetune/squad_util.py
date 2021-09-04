@@ -4,11 +4,16 @@ import random
 
 from typing import List, Tuple
 
+from paddlenlp.transformers import BertTokenizer
 
-def prepare(example, tokenizer):
+
+def prepare(example, tokenizer: BertTokenizer):
     context: str = example['context']
     question: str = example['question']
-    tkd: dict = tokenizer(context, question, stride=128, max_seq_len=128)
+    tkd: dict = tokenizer(context, question, stride=128, max_seq_len=128,
+                          pad_to_max_seq_len=True)
+    input_ids = paddle.to_tensor(tkd['input_ids'])
+    token_type_ids = paddle.to_tensor(tkd['token_type_ids'])
 
     answers: List[str] = example['answers']
     answers_starts: List[int] = example['answer_starts']
@@ -16,11 +21,12 @@ def prepare(example, tokenizer):
     is_impossible: bool = example['is_impossible']
 
     if is_impossible:
-        labels = [(0, 0)]
+        labels = [[0, 0]] * 4
     else:
-        labels = [(st, ed) for st, ed in zip(answers_starts, answers_ends)]
+        labels = [[st, ed] for st, ed in zip(answers_starts, answers_ends)]
+        if len(labels) < 4: labels = (labels * 4)[:4]
 
-    return tkd, labels
+    return input_ids, token_type_ids, np.array(labels)
 
 
 class CrossEntropyLossForSQuAD(paddle.nn.Layer):
