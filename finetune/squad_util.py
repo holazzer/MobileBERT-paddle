@@ -18,7 +18,7 @@ def prepare(example, tokenizer: BertTokenizer):
     answers_ends = [i + len(ans) for i, ans in zip(answers_starts, answers)]
     is_impossible: bool = example['is_impossible']
 
-    if is_impossible:
+    if is_impossible or len(answers) == 0:
         labels = [[0, 0]] * 4
     else:
         head = min(answers_starts)
