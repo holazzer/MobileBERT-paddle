@@ -5,7 +5,7 @@ from paddlenlp.datasets import load_dataset
 from functools import partial
 from typing import Dict, Union, List
 
-from squad_util import prepare, CrossEntropyLossForSQuAD, set_seed
+from finetune.squad_util import prepare, CrossEntropyLossForSQuAD, set_seed
 
 from paddle.io import DataLoader
 import paddle
@@ -35,8 +35,8 @@ acc = paddle.metric.Accuracy()
 squad_v2_train = load_dataset('squad', splits='train_v2')
 squad_v2_dev = load_dataset('squad', splits='dev_v2')
 
-squad_v2_train.map(partial(prepare, tokenizer=mbt), lazy=True)
-squad_v2_dev.map(partial(prepare, tokenizer=mbt), lazy=True)
+squad_v2_train.map(partial(prepare, tokenizer=mbt), lazy=False)
+squad_v2_dev.map(partial(prepare, tokenizer=mbt), lazy=False)
 
 squad_v2_train_loader = DataLoader(squad_v2_train, batch_size=1, shuffle=True)
 squad_v2_dev_loader = DataLoader(squad_v2_dev, batch_size=1, shuffle=False)

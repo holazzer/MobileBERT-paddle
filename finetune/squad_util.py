@@ -15,7 +15,7 @@ SEP_TOKEN = '[SEP]'
 PAD_TOKEN = '[PAD]'
 
 
-def prepare(example, tokenizer: 'BertTokenizer', max_sq=512):
+def prepare_one(example, tokenizer, max_sq=512):
     context: str = example['context']
     c = tokenizer.tokenize(context)
 
@@ -73,6 +73,10 @@ def prepare(example, tokenizer: 'BertTokenizer', max_sq=512):
     return input_ids, token_type_ids, np.array(labels)
 
 
+def prepare_all(example_ls, tk, max_sq):
+    return [prepare_one(e, tk, max_sq) for e in example_ls]
+
+
 class SquadFixDataset(Dataset):
     def __init__(self, name, tokenizer):
         super().__init__()
@@ -81,7 +85,7 @@ class SquadFixDataset(Dataset):
         self.ds = load_dataset('squad', splits=name)
 
     def __getitem__(self, idx):
-        return prepare(self.ds[idx], self.tokenizer)
+        return prepare_one(self.ds[idx], self.tokenizer)
 
     def __len__(self):
         return len(self.ds)
