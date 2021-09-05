@@ -56,8 +56,8 @@ def prepare_one(example, tokenizer, max_sq=512):
                 answers_starts[i] -= offset
                 answers_ends[i] -= offset
             c = c[offset:]
-        else:
-            c = c[:tol]
+
+        c = c[:tol]
 
         labels = [[st, ed] for st, ed in zip(tk_level_starts, tk_level_ends)]
         if len(labels) < 4: labels = (labels * 4)[:4]
@@ -73,7 +73,7 @@ def prepare_one(example, tokenizer, max_sq=512):
     return input_ids, token_type_ids, np.array(labels)
 
 
-def prepare_all(example_ls, tk, max_sq):
+def prepare_all(example_ls, tk, max_sq=512):
     return [prepare_one(e, tk, max_sq) for e in example_ls]
 
 
