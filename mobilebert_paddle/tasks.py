@@ -20,6 +20,7 @@ class MobileBertForQuestionAnswering(nn.Layer):
 
         logits = self.classifier(sequence_output)
         logits = paddle.transpose(logits, perm=[2, 0, 1])
+        logits = nn.functional.sigmoid(logits)
         start_logits, end_logits = paddle.unstack(x=logits, axis=0)
 
         return start_logits, end_logits
