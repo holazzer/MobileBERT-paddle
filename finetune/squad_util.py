@@ -92,7 +92,6 @@ class CrossEntropyLossForSQuAD(paddle.nn.Layer):
         super().__init__()
 
     def forward(self,start_logits, end_logits, labels: List[Tuple[int, int]]):
-        cnt = (len(labels) * 2)
         labels = labels.transpose((1, 2, 0))
         loss = 0.
         for start_position, end_position in labels:
@@ -101,7 +100,7 @@ class CrossEntropyLossForSQuAD(paddle.nn.Layer):
             end_loss = paddle.nn.functional.cross_entropy(
                 input=end_logits, label=end_position)
             loss += (start_loss + end_loss)
-        return loss / cnt
+        return loss
 
 
 def set_seed(_seed=0xCAFE):
