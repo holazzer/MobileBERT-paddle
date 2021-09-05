@@ -33,8 +33,10 @@ def prepare_one(example, tokenizer, max_sq=512):
 
     if is_impossible or len(answers) == 0:
         labels = [[0, 0]] * 4
-    else:
+        tol = max_sq - 3 - len(q)
+        c = c[:tol]
 
+    else:
         # char-level start -> token-level start
         for ans, char_start in zip(answers, answers_starts):
             b4 = context[:char_start]
