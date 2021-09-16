@@ -131,3 +131,13 @@ class BaseModelOutputWithPooling(ModelOutput):
     attentions: Optional[Tuple[paddle.Tensor]] = None
 
 
+@dataclass
+class QuestionAnsweringModelOutput(ModelOutput):
+    loss: Optional[paddle.Tensor] = None
+    start_logits: paddle.Tensor = None
+    end_logits: paddle.Tensor = None
+    hidden_states: Optional[Tuple[paddle.Tensor]] = None
+    attentions: Optional[Tuple[paddle.Tensor]] = None
+
+
+

@@ -2,7 +2,8 @@ import paddle
 from paddle import nn
 
 from .util import *
-
+from .monkey import Linear as _Linear
+nn.Linear = _Linear
 
 class MobileBertEmbeddings(nn.Layer):
     """Construct the embeddings from word, position and token_type embeddings."""

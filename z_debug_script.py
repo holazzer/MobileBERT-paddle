@@ -1,14 +1,14 @@
 import paddle
-from mobile_bert_model import *
-from config import MobileBertConfig
-from ppnlp_tokenizer import MobileBertTokenizer
+from mobilebert_paddle.mobile_bert_model import MobileBertModel
+from mobilebert_paddle.config import MobileBertConfig
+from mobilebert_paddle.ppnlp_tokenizer import MobileBertTokenizer
 
 
 config = MobileBertConfig()
 model = MobileBertModel(config, add_pooling_layer=False)
 pretrained_weights = paddle.load('d:/nd.bin')
 model.load_dict(pretrained_weights)
-tokenizer = MobileBertTokenizer('./mobilebert-uncased/vocab.txt', do_lower_case=True)
+tokenizer = MobileBertTokenizer(r'C:\Users\what\Desktop\mobile_bert\mobilebert_paddle\mobilebert-uncased\vocab.txt', do_lower_case=True)
 
 
 def tk(s):

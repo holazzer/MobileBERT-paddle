@@ -1,6 +1,8 @@
 import paddle
 from paddle import nn
 
+from .monkey import Linear as _Linear
+nn.Linear = _Linear
 
 class MobileBertPooler(nn.Layer):
     def __init__(self, config):

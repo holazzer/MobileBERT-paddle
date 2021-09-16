@@ -3,6 +3,11 @@ from paddle import nn
 import paddle.nn.functional as F
 
 import math
+from .monkey import Linear as _Linear
+nn.Linear = _Linear
+
+from .monkey import NumpyMatmul
+# paddle.matmul = NumpyMatmul.apply
 
 
 class MobileBertSelfAttention(nn.Layer):
@@ -46,7 +51,7 @@ class MobileBertSelfAttention(nn.Layer):
         # attention_scores = torch.matmul(query_layer, key_layer.transpose(-1, -2))
         perm = list(range(key_layer.dim()))
         perm[-1], perm[-2] = perm[-2], perm[-1]
-        attention_scores = paddle.matmul(query_layer, key_layer.transpose(perm))
+        attention_scores = paddle.matmul(query_layer, key_layer.transpose(perm))  # bad matmul
         # todo: check transpose behavior.
 
         attention_scores = attention_scores / math.sqrt(self.attention_head_size)

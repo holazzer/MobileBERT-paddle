@@ -2,6 +2,9 @@ import paddle
 from paddle import nn
 from .util import NORM2FN
 
+from .monkey import Linear as _Linear
+nn.Linear = _Linear
+
 
 class OutputBottleneck(nn.Layer):
     def __init__(self, config):

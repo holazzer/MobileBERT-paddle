@@ -7,6 +7,9 @@ from .pretrained_model import PreTrainedModel
 
 from typing import Tuple
 
+from .monkey import Linear as _Linear
+nn.Linear = _Linear
+
 
 class MobileBertPreTrainedModel(PreTrainedModel):
     """

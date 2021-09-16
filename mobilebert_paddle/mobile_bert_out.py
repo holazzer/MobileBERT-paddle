@@ -3,6 +3,8 @@ from paddle import nn
 
 from .out_bottleneck import OutputBottleneck
 from .util import NORM2FN
+from .monkey import Linear as _Linear
+nn.Linear = _Linear
 
 
 class MobileBertOutput(nn.Layer):

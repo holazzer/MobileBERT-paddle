@@ -2,6 +2,8 @@ import paddle
 from paddle import nn
 
 from .util import ACT2FN
+from .monkey import Linear as _Linear
+nn.Linear = _Linear
 
 
 class MobileBertIntermediate(nn.Layer):

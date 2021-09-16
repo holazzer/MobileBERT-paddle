@@ -5,7 +5,7 @@ from paddlenlp.datasets import load_dataset
 from functools import partial
 from typing import Dict, Union, List
 
-from finetune.squad_util import prepare, CrossEntropyLossForSQuAD, set_seed
+from finetune.squad_util import prepare_one, CrossEntropyLossForSQuAD, set_seed
 
 from paddle.io import DataLoader
 import paddle
@@ -54,6 +54,7 @@ model.fit(squad_v2_train_loader, eval_data=squad_v2_dev_loader, epochs=1)
 
 
 
+from paddlenlp.transformers import BertForQuestionAnswering
 
 
 

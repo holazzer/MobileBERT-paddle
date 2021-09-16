@@ -24,9 +24,6 @@ for k in target:
     if src[k].shape != target[k].shape:
         wrong_shape.append(k)
 
-
-
-
 for k in wrong_shape:
     data[k] = data[k].t()
 
